@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/fatih/color"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -23,7 +23,7 @@ const (
 
 var (
 	// Authors is the authors
-	Authors = []cli.Author{{Name: "Erik Hollensbe", Email: "erik+github@hollensbe.org"}}
+	Authors = []*cli.Author{{Name: "Erik Hollensbe", Email: "erik+github@hollensbe.org"}}
 )
 
 func main() {
