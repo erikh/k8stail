@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
@@ -37,6 +38,23 @@ func main() {
 			Aliases: []string{"n"},
 			Usage:   "Namespaces you care about; may provide multiple",
 		},
+		&cli.Int64Flag{
+			Name:    "since",
+			Aliases: []string{"s"},
+			Usage:   "Will only show logs after this time in seconds",
+		},
+		&cli.TimestampFlag{
+			Name:    "after",
+			Aliases: []string{"a"},
+			Usage:   "Will only show logs that appear after this time",
+			Layout:  time.RFC3339,
+		},
+		&cli.BoolFlag{
+			Name:    "timestamp",
+			Aliases: []string{"t"},
+			Usage:   "Timestamp log messages",
+			Value:   true,
+		},
 	}
 
 	app.Action = run
@@ -53,6 +71,28 @@ func run(ctx *cli.Context) error {
 		k8s   *rest.Config
 		kcEnv = os.Getenv("KUBECONFIG")
 	)
+
+	if ctx.IsSet("after") && ctx.IsSet("since") {
+		return errors.New("after and since may not be set at the same time")
+	}
+
+	var (
+		after *metav1.Time
+		since *int64
+	)
+
+	if ctx.Timestamp("after") != nil {
+		t := metav1.NewTime(*ctx.Timestamp("after"))
+		after = &t
+	} else if ctx.Int64("since") != 0 {
+		val := ctx.Int64("since")
+		since = &val
+	}
+
+	if after == nil && since == nil {
+		t := metav1.Now()
+		after = &t
+	}
 
 	if kcEnv != "" {
 		k8s, err = clientcmd.BuildConfigFromFlags("", kcEnv)
@@ -94,7 +134,12 @@ func run(ctx *cli.Context) error {
 
 		for _, pod := range pods.Items {
 			go func(pod corev1.Pod) {
-				res := cs.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Follow: true})
+				res := cs.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
+					Follow:       true,
+					SinceSeconds: since,
+					SinceTime:    after,
+					Timestamps:   ctx.Bool("timestamp"),
+				})
 				reader, err := res.Stream(context.Background())
 				if err != nil {
 					fmt.Fprintln(os.Stderr, color.RedString(err.Error()))
