@@ -1,6 +1,6 @@
-module code.hollensbe.org/erikh/logblossom
+module github.com/erikh/k8stail
 
-go 1.14
+go 1.15
 
 require (
 	github.com/fatih/color v1.9.0
