@@ -17,10 +17,12 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// Version of the program
 const (
-	Name    = "k8stail"
-	Usage   = "tail lots of k8s logs at once"
+	// Name is the name of the program
+	Name = "k8stail"
+	// Usage is some flavor text for god knows what
+	Usage = "tail lots of k8s logs at once"
+	// Version is the version
 	Version = "0.1.0"
 )
 
