@@ -31,7 +31,13 @@ func main() {
 	app.Version = Version
 	app.Authors = Authors
 
-	app.Flags = []cli.Flag{}
+	app.Flags = []cli.Flag{
+		&cli.StringSliceFlag{
+			Name:    "namespace",
+			Aliases: []string{"n"},
+			Usage:   "Namespaces you care about; may provide multiple",
+		},
+	}
 
 	app.Action = run
 
@@ -65,13 +71,23 @@ func run(ctx *cli.Context) error {
 		return err
 	}
 
-	namespaces, err := cs.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return err
+	namespaces := []string{}
+
+	if len(ctx.StringSlice("namespace")) != 0 {
+		namespaces = ctx.StringSlice("namespace")
+	} else {
+		list, err := cs.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+
+		for _, item := range list.Items {
+			namespaces = append(namespaces, item.Name)
+		}
 	}
 
-	for _, item := range namespaces.Items {
-		pods, err := cs.CoreV1().Pods(item.Name).List(context.Background(), metav1.ListOptions{})
+	for _, ns := range namespaces {
+		pods, err := cs.CoreV1().Pods(ns).List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			return err
 		}
