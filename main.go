@@ -19,6 +19,8 @@ import (
 
 // Version of the program
 const (
+	Name    = "k8stail"
+	Usage   = "tail lots of k8s logs at once"
 	Version = "0.1.0"
 )
 
@@ -29,10 +31,19 @@ var (
 
 func main() {
 	app := cli.NewApp()
+	app.Name = Name
+	app.Usage = Usage
+	app.UsageText = "KUBECONFIG=... k8stail [options]"
 	app.Version = Version
 	app.Authors = Authors
 
 	app.Flags = []cli.Flag{
+		&cli.StringFlag{
+			Name:    "config",
+			Aliases: []string{"c"},
+			Usage:   "kubectl config file",
+			EnvVars: []string{"KUBECONFIG"},
+		},
 		&cli.StringSliceFlag{
 			Name:    "namespace",
 			Aliases: []string{"n"},
@@ -69,7 +80,7 @@ func run(ctx *cli.Context) error {
 	var (
 		err   error
 		k8s   *rest.Config
-		kcEnv = os.Getenv("KUBECONFIG")
+		kcEnv = ctx.String("config")
 	)
 
 	if ctx.IsSet("after") && ctx.IsSet("since") {
